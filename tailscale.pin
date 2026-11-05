@@ -1,0 +1,4 @@
+# Upstream tailscale-android (BSD-3-Clause), built with this repository's overlay (build.sh). An even minor version
+# is a Tailscale stable release; odd ones are unstable.
+TAILSCALE_TAG=1.104.5-t788384763-gd8673104f
+TAILSCALE_COMMIT=d8673104f600c05b8c20b64d0e70951ed670236a

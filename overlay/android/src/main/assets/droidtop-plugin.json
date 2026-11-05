@@ -1,0 +1,20 @@
+{
+  "id": "dev.droidtop.tailscale",
+  "origin": "droidtop",
+  "label": "Tailscale",
+  "summary": "Your tailnet, and droidtop reaching your devices over it",
+  "publisher": "droidtop",
+  "homepage": "https://github.com/Droidtop/droidtop-plugin-tailscale",
+  "category": "integrations",
+  "description": "Tailscale's own Android app with droidtop's plugin layer. It connects this device to your tailnet, and tells droidtop where your other devices are on it, so KDE Connect and droidtop reach them away from home.",
+  "version": "1",
+  "kind": "app_interface",
+  "contractVersion": 3,
+  "app": { "package": "dev.droidtop.tailscale", "service": "dev.droidtop.tailscale.DroidtopInterfaceService" },
+  "provides": [
+    {"point": "ui.facets", "version": 1, "id": "tailscale", "targets": ["plugin.page", "quickmenu"]}
+  ],
+  "permissions": [
+    {"id": "peers.addresses", "required": false, "reason": "Tells droidtop the tailnet addresses of your online devices, so it reaches them over Tailscale"}
+  ]
+}

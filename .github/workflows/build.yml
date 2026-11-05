@@ -1,0 +1,80 @@
+name: Build
+
+# build.sh builds upstream tailscale-android at tailscale.pin with droidtop's overlay, running upstream's unit tests
+# and the overlay's; the unsigned APK is the build job's artifact. The sign job, on plugin-core and plugin-v* tags only,
+# signs it with the repository's Android key (sign.sh) when that key is set, and a plugin-v* tag attaches the signed
+# APK to its release.
+on:
+  push:
+    branches: [plugin-core, 'ci/**']
+    tags: ['plugin-v*']
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: true
+          persist-credentials: false
+      - name: Android SDK packages upstream builds with
+        run: |
+          set -eu
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platforms;android-36" "build-tools;36.0.0" "ndk;23.1.7779620" > /dev/null
+      - name: Build
+        run: ./build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tailscale-droidtop-unsigned
+          path: build/tailscale-droidtop-unsigned.apk
+          if-no-files-found: error
+
+  sign:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/plugin-core' || startsWith(github.ref, 'refs/tags/plugin-v'))
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: tailscale-droidtop-unsigned
+          path: build
+      - name: Sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.TAILSCALE_ANDROID_KEYSTORE_BASE64 }}
+          TAILSCALE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.TAILSCALE_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -eu
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::TAILSCALE_ANDROID_KEYSTORE_BASE64 is not set: the APK stays unsigned"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          TAILSCALE_ANDROID_KEYSTORE="$RUNNER_TEMP/signing.p12" ./sign.sh
+          rm -f "$RUNNER_TEMP/signing.p12"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tailscale-droidtop
+          path: build/tailscale-droidtop.apk
+          if-no-files-found: ignore
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/plugin-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          test -f build/tailscale-droidtop.apk
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$GITHUB_REF_NAME" \
+            build/tailscale-droidtop.apk || gh release upload "$GITHUB_REF_NAME" build/tailscale-droidtop.apk --clobber --repo "$GITHUB_REPOSITORY"

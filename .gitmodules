@@ -1,0 +1,3 @@
+[submodule "vendor/lib-plugins"]
+	path = vendor/lib-plugins
+	url = https://github.com/Droidtop/lib-plugins
