@@ -36,7 +36,7 @@ python3 apply-overlay.py build/upstream vendor/lib-plugins
   cd build/upstream
   make libtailscale version
   cd android
-  ./gradlew --no-daemon testReleaseUnitTest assembleRelease
+  ./gradlew --no-daemon test assembleRelease
 )
 apk=$(find build/upstream/android/build/outputs/apk/release -name '*-unsigned.apk' | head -1)
 test -n "$apk" || { echo "no unsigned release APK was built" >&2; exit 1; }

@@ -29,8 +29,8 @@ must occur exactly once upstream, so moving the pin to an upstream that changed 
 ## Building
 
 `.github/workflows/build.yml` runs `build.sh`: it clones upstream at `tailscale.pin`, checks the commit, applies the
-overlay, builds libtailscale with upstream's Makefile (its own Go toolchain and gomobile), and runs Gradle's release
-unit tests (the overlay's `TailnetPeersTest` among them) and `assembleRelease`. On `plugin-core` and `plugin-v*` tags,
+overlay, builds libtailscale with upstream's Makefile (its own Go toolchain and gomobile), and runs Gradle's
+`test` (the overlay's `TailnetPeersTest` among them) and `assembleRelease`. On `plugin-core` and `plugin-v*` tags,
 `sign.sh` signs the APK with APK Signature Scheme v2 and v3 using the repository's Android key
 (`TAILSCALE_ANDROID_KEYSTORE_BASE64`, `TAILSCALE_ANDROID_KEYSTORE_PASSWORD`); without the key it stays unsigned.
 
